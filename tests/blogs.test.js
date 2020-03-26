@@ -109,14 +109,36 @@ describe('when there are blogs in the database', () => {
 
   describe('deleting a blog', () => {
 
-    test('succeeds with status code 204 when id is valid', async () => {
+    test('succeeds with status code 204 when id is valid and user is correct', async () => {
+      // First add a blog for loginuser
+      const token = await getToken()
+      const blog = { title: 'Blog To Delete', author: 'Author C', likes: 1, url: 'some.url' }
+      await api
+        .post('/api/blogs')
+        .set('Authorization', `Bearer ${token}`)
+        .send(blog)
+        .expect(201)
       const blogsAtStart = await testHelper.blogsInDb()
-      const existingBlog = blogsAtStart.pop()
+      const existingBlog = blogsAtStart.find(b => b.title === blog.title)
       await api
         .delete(`/api/blogs/${existingBlog.id}`)
+        .set('Authorization', `Bearer ${token}`)
         .expect(204)
       const blogsAtEnd = await testHelper.blogsInDb()
       expect(blogsAtEnd).not.toContainEqual(existingBlog)
+    })
+
+    test('fails with status code 204 when id is valid but user is incorrect', async () => {
+      const token = await getToken()
+      const blogsAtStart = await testHelper.blogsInDb()
+      const existingBlog = blogsAtStart.pop()
+      const response = await api
+        .delete(`/api/blogs/${existingBlog.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(401)
+      expect(response.body.error).toBe('unauthorized')
+      const blogsAtEnd = await testHelper.blogsInDb()
+      expect(blogsAtEnd).toContainEqual(existingBlog)
     })
 
   })
