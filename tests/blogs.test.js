@@ -5,6 +5,15 @@ const testHelper = require('./test_helper')
 
 const api = supertest(app)
 
+const getToken = async () => {
+  const loginuser = testHelper.initialUsers[2]
+  const response = await api
+    .post('/api/login')
+    .send(loginuser)
+    .expect(200)
+  return response.body.token
+}
+
 beforeEach(async () => {
   await testHelper.initDb()
 })
@@ -31,9 +40,12 @@ describe('when there are blogs in the database', () => {
   describe('adding a blog', () => {
 
     test('succeeds with valid data', async () => {
+      const token = await getToken()
+
       const blogToAdd = { title: 'Title 7', author: 'Author C', likes: 1, url: 'some.url' }
       await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${token}`)
         .send(blogToAdd)
         .expect(201)
       const resultingBlogs = await testHelper.blogsInDb()
@@ -43,9 +55,11 @@ describe('when there are blogs in the database', () => {
     })
 
     test('the new blog has 0 likes if likes are not given', async () => {
+      const token = await getToken()
       const blogToAdd = { title: 'Title 7', author: 'Author C', url: 'some.url' }
       await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${token}`)
         .send(blogToAdd)
         .expect(201)
       const resultingBlogs = await testHelper.blogsInDb()
@@ -55,9 +69,11 @@ describe('when there are blogs in the database', () => {
     })
 
     test('fails with status code 400 if title is missing', async () => {
+      const token = await getToken()
       const blogToAdd = { author: 'Author C', likes: 1, url: 'some.url' }
       await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${token}`)
         .send(blogToAdd)
         .expect(400)
       const resultingBlogs = await testHelper.blogsInDb()
@@ -65,11 +81,26 @@ describe('when there are blogs in the database', () => {
     })
 
     test('fails with status code 400 if url is missing', async () => {
+      const token = await getToken()
       const blogToAdd = { title: 'Title 7', author: 'Author C', likes: 1 }
       await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${token}`)
         .send(blogToAdd)
         .expect(400)
+      const resultingBlogs = await testHelper.blogsInDb()
+      expect(resultingBlogs.length).toBe(testHelper.initialBlogs.length)
+    })
+
+    test('fails with status code 401 with invalid token', async () => {
+      const token = 'abcdefgh'
+      const blogToAdd = { title: 'Title 7', author: 'Author C', likes: 1 }
+      const response = await api
+        .post('/api/blogs')
+        .set('Authorization', `Bearer ${token}`)
+        .send(blogToAdd)
+        .expect(401)
+      expect(response.body.error).toContain('invalid token')
       const resultingBlogs = await testHelper.blogsInDb()
       expect(resultingBlogs.length).toBe(testHelper.initialBlogs.length)
     })

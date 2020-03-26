@@ -17,7 +17,15 @@ describe('when existing user logs in', () => {
       .expect(200)
     expect(response.body.token).toBeDefined()
     expect(response.body.username).toBe(user.username)
-  } )
+  })
+
+  test('login fails with status code 401 with wrong password', async () => {
+    const user = { username: 'loginuser', password: 'password' }
+    await api
+      .post('/api/login')
+      .send(user)
+      .expect(401)
+  })
 })
 
 afterAll(async () => {

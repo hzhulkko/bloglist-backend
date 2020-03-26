@@ -1,8 +1,9 @@
 POST http://localhost:3003/api/blogs
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImxvZ2ludXNlciIsImlkIjoiNWU3Y2I1ZjNiYmFjYWY3ZWFjNjNjOWEzIiwiaWF0IjoxNTg1MjMxNzM5fQ.jJBUtFK1O18crGLwi4MJm8RyVXU8kEOkSQze7FhI8nQ
 
 {
-    "title" : "Test Title",
+    "title" : "New Test Title",
     "author" : "Test Author",
     "url" : "http://some.url.for.testing",
     "likes": 0
