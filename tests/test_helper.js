@@ -1,3 +1,4 @@
+const bcrypt = require('bcrypt')
 const Blog = require('../models/blog')
 const User = require('../models/user')
 
@@ -20,8 +21,20 @@ const initialUsers = [
     name: 'Test User',
     username: 'testuser',
     password: 'secret'
+  },
+  {
+    name: 'Login User',
+    username: 'loginuser',
+    password: 'secret'
   }
 ]
+
+const createLoginUser = async () => {
+  const loginuser = await User.findOne({ username: initialUsers[2].username })
+  const passwordHash = await bcrypt.hash(initialUsers[2].password, 10)
+  loginuser.passwordHash = passwordHash
+  await loginuser.save()
+}
 
 const initDb = async () => {
   await Blog.deleteMany({})
@@ -44,6 +57,7 @@ const initDb = async () => {
   testuser.blogs = tuBlogs.map(b => b._id)
   await superuser.save()
   await testuser.save()
+  await createLoginUser()
 }
 
 const blogsInDb = async () => {
