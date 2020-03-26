@@ -1,4 +1,5 @@
 const Blog = require('../models/blog')
+const User = require('../models/user')
 
 const initialBlogs = [
   { title: 'Title 1', author: 'Author A', likes: 1, url: 'http://some.url' },
@@ -9,9 +10,40 @@ const initialBlogs = [
   { title: 'Title 6', author: 'Author A', likes: 0, url: 'http://some.url' }
 ]
 
+const initialUsers = [
+  {
+    name: 'Superuser',
+    username: 'root',
+    password: 'secret'
+  },
+  {
+    name: 'Test User',
+    username: 'testuser',
+    password: 'secret'
+  }
+]
+
 const initDb = async () => {
   await Blog.deleteMany({})
-  await Blog.insertMany(initialBlogs)
+  await User.deleteMany({})
+  await User.insertMany(initialUsers)
+  const superuser = await User.findOne({ username: initialUsers[0].username })
+  const testuser = await User.findOne({ username: initialUsers[1].username })
+  let suBlogs = initialBlogs
+    .filter(blog => blog.likes % 2 === 0)
+    .map(blog => ({ ...blog, user: superuser._id }))
+  let tuBlogs = initialBlogs
+    .filter(blog => blog.likes%2 === 1)
+    .map(blog => ({ ...blog, user: testuser._id }))
+  await Blog.insertMany(suBlogs)
+  await Blog.insertMany(tuBlogs)
+  const blogs = await Blog.find({})
+  suBlogs = blogs.filter(blog => blog.user.toString() === superuser._id.toString())
+  tuBlogs = blogs.filter(blog => blog.user.toString() === testuser._id.toString())
+  superuser.blogs = suBlogs.map(b => b._id)
+  testuser.blogs = tuBlogs.map(b => b._id)
+  await superuser.save()
+  await testuser.save()
 }
 
 const blogsInDb = async () => {
@@ -19,4 +51,8 @@ const blogsInDb = async () => {
   return blogs.map(blog => blog.toJSON())
 }
 
-module.exports = { initialBlogs, initDb, blogsInDb }
+const usersInDb = async () => {
+  const users = await User.find({})
+  return users.map(user => user.toJSON())
+}
+module.exports = { initialBlogs, initDb, blogsInDb, usersInDb }
