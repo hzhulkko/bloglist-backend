@@ -29,9 +29,9 @@ const initialUsers = [
   }
 ]
 
-const createLoginUser = async () => {
-  const loginuser = await User.findOne({ username: initialUsers[2].username })
-  const passwordHash = await bcrypt.hash(initialUsers[2].password, 10)
+const createPasswordHash = async (user) => {
+  const loginuser = await User.findOne({ username: user.username })
+  const passwordHash = await bcrypt.hash(user.password, 10)
   loginuser.passwordHash = passwordHash
   await loginuser.save()
 }
@@ -57,7 +57,8 @@ const initDb = async () => {
   testuser.blogs = tuBlogs.map(b => b._id)
   await superuser.save()
   await testuser.save()
-  await createLoginUser()
+  let promises = initialUsers.map(async user => createPasswordHash(user))
+  await Promise.all(promises)
 }
 
 const blogsInDb = async () => {
