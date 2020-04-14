@@ -1,8 +1,10 @@
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 const userRouter = require('express').Router()
 const User = require('../models/user')
 
 userRouter.get('/', async (request, response) => {
+  jwt.verify(request.token, process.env.SECRET)
   const users = await User
     .find({})
     .populate('blogs', { title : 1, author: 1, url: 1 })

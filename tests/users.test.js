@@ -75,6 +75,36 @@ describe('user creation when there are users in the database', () => {
 
 })
 
+describe('user listing when there are users in the database', () => {
+
+  test('succeeds when user is logged in', async () => {
+
+    const loginuser = testHelper.initialUsers[2]
+
+    const tokenRequest = await api
+      .post('/api/login')
+      .send(loginuser)
+      .expect(200)
+    const token = tokenRequest.body.token
+
+    const response = await api
+      .get('/api/users')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.length).toBe(testHelper.initialUsers.length)
+  })
+
+  test('fails with error code 401 if user is not logged in', async () => {
+
+    await api
+      .get('/api/users')
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+  })
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })
