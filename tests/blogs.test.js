@@ -4,6 +4,7 @@ const supertest = require('supertest')
 const testHelper = require('./test_helper')
 
 const api = supertest(app)
+let token = null
 
 const getToken = async () => {
   const loginuser = testHelper.initialUsers[2]
@@ -16,6 +17,7 @@ const getToken = async () => {
 
 beforeEach(async () => {
   await testHelper.initDb()
+  token = await getToken()
 })
 
 describe('when there are blogs in the database', () => {
@@ -23,25 +25,24 @@ describe('when there are blogs in the database', () => {
   test('blogs are return in json format', async () => {
     await api
       .get('/api/blogs')
+      .set('Authorization', `Bearer ${token}`)
       .expect(200)
       .expect('Content-Type', /application\/json/)
   })
 
   test('all blogs in the database are listed', async () => {
-    const response = await api.get('/api/blogs')
+    const response = await api.get('/api/blogs').set('Authorization', `Bearer ${token}`)
     expect(response.body.length).toBe(testHelper.initialBlogs.length)
   })
 
   test('returned blogs have an attribute id', async () => {
-    const response = await api.get('/api/blogs')
+    const response = await api.get('/api/blogs').set('Authorization', `Bearer ${token}`)
     response.body.forEach(body => expect(body.id).toBeDefined())
   })
 
   describe('adding a blog', () => {
 
     test('succeeds with valid data', async () => {
-      const token = await getToken()
-
       const blogToAdd = { title: 'Title 7', author: 'Author C', likes: 1, url: 'some.url' }
       await api
         .post('/api/blogs')
@@ -55,7 +56,6 @@ describe('when there are blogs in the database', () => {
     })
 
     test('the new blog has 0 likes if likes are not given', async () => {
-      const token = await getToken()
       const blogToAdd = { title: 'Title 7', author: 'Author C', url: 'some.url' }
       await api
         .post('/api/blogs')
@@ -69,7 +69,6 @@ describe('when there are blogs in the database', () => {
     })
 
     test('fails with status code 400 if title is missing', async () => {
-      const token = await getToken()
       const blogToAdd = { author: 'Author C', likes: 1, url: 'some.url' }
       await api
         .post('/api/blogs')
@@ -81,7 +80,6 @@ describe('when there are blogs in the database', () => {
     })
 
     test('fails with status code 400 if url is missing', async () => {
-      const token = await getToken()
       const blogToAdd = { title: 'Title 7', author: 'Author C', likes: 1 }
       await api
         .post('/api/blogs')
@@ -93,11 +91,11 @@ describe('when there are blogs in the database', () => {
     })
 
     test('fails with status code 401 with invalid token', async () => {
-      const token = 'abcdefgh'
+      const invalidToken = 'abcdefgh'
       const blogToAdd = { title: 'Title 7', author: 'Author C', likes: 1 }
       const response = await api
         .post('/api/blogs')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${invalidToken}`)
         .send(blogToAdd)
         .expect(401)
       expect(response.body.error).toContain('invalid token')
@@ -111,7 +109,6 @@ describe('when there are blogs in the database', () => {
 
     test('succeeds with status code 204 when id is valid and user is correct', async () => {
       // First add a blog for loginuser
-      const token = await getToken()
       const blog = { title: 'Blog To Delete', author: 'Author C', likes: 1, url: 'some.url' }
       await api
         .post('/api/blogs')
@@ -129,7 +126,6 @@ describe('when there are blogs in the database', () => {
     })
 
     test('fails with status code 204 when id is valid but user is incorrect', async () => {
-      const token = await getToken()
       const blogsAtStart = await testHelper.blogsInDb()
       const existingBlog = blogsAtStart.pop()
       const response = await api
@@ -156,6 +152,7 @@ describe('when there are blogs in the database', () => {
       }
       await api
         .put(`/api/blogs/${oldBlog.id}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(update)
         .expect(200)
       const blogsAtEnd = await testHelper.blogsInDb()
