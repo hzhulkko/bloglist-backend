@@ -40,6 +40,31 @@ describe('when there are blogs in the database', () => {
     response.body.forEach(body => expect(body.id).toBeDefined())
   })
 
+  describe('getting a blog', () => {
+    test('succeeds if the id exists ', async () => {
+      const blogs = await testHelper.blogsInDb()
+      const blog = blogs[0]
+      const response = await api.get(`/api/blogs/${blog.id}`)
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.title).toBe(blog.title)
+      expect(response.body.author).toBe(blog.author)
+      expect(response.body.url).toBe(blog.url)
+      expect(response.body.user.id).toBe(blog.user.toString())
+    })
+
+    test('fails with status code 404 if the id does not exist', async () => {
+      const response = await api.get('/api/blogs/5e96b9678abe26628aab4818')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404)
+        .expect('Content-Type', /application\/json/)
+      expect(response.body.error).toBe('blog not found')
+    })
+  })
+
+
+
   describe('adding a blog', () => {
 
     test('succeeds with valid data', async () => {

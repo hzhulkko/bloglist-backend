@@ -28,6 +28,16 @@ blogsRouter.post('/', async (request, response) => {
   response.status(201).json(updatedBlog.toJSON())
 })
 
+blogsRouter.get('/:id', async (request, response) => {
+  const blog = await Blog
+    .findById(request.params.id)
+    .populate('user', { name: 1, username: 1 })
+  if (!blog) {
+    return response.status(404).send({ error: 'blog not found' })
+  }
+  response.json(blog)
+})
+
 blogsRouter.delete('/:id', async (request, response) => {
   const blog = await Blog.findById(request.params.id)
   if (!(blog.user.toString() === request.token.id)) {
