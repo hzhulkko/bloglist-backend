@@ -105,6 +105,63 @@ describe('user listing when there are users in the database', () => {
   })
 })
 
+describe('getting details of a single user', () => {
+
+  test('succeeds when user has logged in', async () => {
+    const users = await testHelper.usersInDb()
+    const testuser = users.find(user => user.username === 'testuser')
+
+    const loginuser = testHelper.initialUsers[2]
+    const tokenRequest = await api
+      .post('/api/login')
+      .send(loginuser)
+      .expect(200)
+    const token = tokenRequest.body.token
+
+    const response = await api
+      .get(`/api/users/${testuser.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+
+    expect(response.body.username).toBe('testuser')
+    expect(response.body.name).toBe('Test User')
+    expect(response.body.id).toBe(testuser.id)
+    expect(response.body.blogs.length).toBe(testuser.blogs.length)
+
+  })
+
+  test('fails with status code 401 if user is not logged in', async () => {
+    const users = await testHelper.usersInDb()
+    const testuser = users.find(user => user.username === 'testuser')
+    const token = 'abc'
+
+    await api
+      .get(`/api/users/${testuser.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(401)
+      .expect('Content-Type', /application\/json/)
+
+  })
+
+  test('fails with status code 404 if user id is not found', async () => {
+
+    const loginuser = testHelper.initialUsers[2]
+    const tokenRequest = await api
+      .post('/api/login')
+      .send(loginuser)
+      .expect(200)
+    const token = tokenRequest.body.token
+
+    await api
+      .get('/api/users/5e96b9678abe26628aab481b')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404)
+      .expect('Content-Type', /application\/json/)
+
+  })
+})
+
 afterAll(() => {
   mongoose.connection.close()
 })

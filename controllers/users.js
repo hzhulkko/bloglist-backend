@@ -32,4 +32,15 @@ userRouter.post('/', async (request, response) => {
 
 })
 
+userRouter.get('/:id', async (request, response) => {
+  jwt.verify(request.token, process.env.SECRET)
+  const user = await User
+    .findById(request.params.id)
+    .populate('blogs', { title : 1, author: 1, url: 1 })
+  if (!user) {
+    return response.status(404).send({ error: 'user not found' })
+  }
+  return response.json(user)
+})
+
 module.exports = userRouter
