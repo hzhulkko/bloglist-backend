@@ -28,6 +28,18 @@ blogsRouter.post('/', async (request, response) => {
   response.status(201).json(updatedBlog.toJSON())
 })
 
+blogsRouter.post('/:id/comments', async (request, response) => {
+  const updatedBlog = await Blog
+    .findByIdAndUpdate(request.params.id,
+      { $push: { 'comments': request.body.comment } },
+      { new: true })
+    .populate('user', { name: 1, username: 1 })
+  if (!updatedBlog) {
+    return response.status(404).send({ error: 'blog not found' })
+  }
+  response.json(updatedBlog.toJSON())
+})
+
 blogsRouter.get('/:id', async (request, response) => {
   const blog = await Blog
     .findById(request.params.id)

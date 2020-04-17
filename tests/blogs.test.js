@@ -189,6 +189,31 @@ describe('when there are blogs in the database', () => {
 
   })
 
+  describe('commenting on a blog', () => {
+
+    test('succeeds with valid id', async () => {
+      const blogsAtStart = await testHelper.blogsInDb()
+      const blogToComment = blogsAtStart.pop()
+      const comment = { comment: 'awesome!' }
+      const response = await api
+        .post(`/api/blogs/${blogToComment.id}/comments`)
+        .set('Authorization', `Bearer ${token}`)
+        .send(comment)
+        .expect(200)
+      expect(response.body.comments).toContain(comment.comment)
+    })
+
+    test('fails with status code 404 if id does not exists', async () => {
+      const comment = { comment: 'awesome!' }
+      const response = await api
+        .post('/api/blogs/5e96b9678abe26628aab4818/comments')
+        .set('Authorization', `Bearer ${token}`)
+        .send(comment)
+        .expect(404)
+      expect(response.body.error).toBe('blog not found')
+    })
+  })
+
 
 })
 
